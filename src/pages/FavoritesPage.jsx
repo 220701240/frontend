@@ -1,22 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import axios from "axios"; // Import Axios for API calls
 
 const Favorites = () => {
   const { user } = useAuth();
   const [favorites, setFavorites] = useState([]);
 
+  // Fetch favorites from backend
   useEffect(() => {
     if (user) {
-      const storedFavorites = JSON.parse(localStorage.getItem(`favorites_${user.username}`)) || [];
-      setFavorites(storedFavorites);
+      axios
+        .get(`http://localhost:5000/api/favorites/${user.username}`) // Adjust backend URL if needed
+        .then((response) => {
+          setFavorites(response.data);
+        })
+        .catch((error) => {
+          console.error("Error fetching favorites:", error);
+        });
     }
   }, [user]);
 
+  // Remove a recipe from favorites
   const removeFromFavorites = (recipeId) => {
     if (user) {
-      const updatedFavorites = favorites.filter((recipe) => recipe.id !== recipeId);
-      setFavorites(updatedFavorites);
-      localStorage.setItem(`favorites_${user.username}`, JSON.stringify(updatedFavorites));
+      axios
+        .delete(`http://localhost:5000/api/favorites/${user.username}/${recipeId}`)
+        .then(() => {
+          setFavorites(favorites.filter((recipe) => recipe.id !== recipeId));
+        })
+        .catch((error) => {
+          console.error("Error removing favorite:", error);
+        });
     }
   };
 
@@ -57,7 +71,11 @@ const Favorites = () => {
                     style={{ maxWidth: "200px" }}
                   />
                 )}
-                <button className="btn btn-danger mt-2" style={{marginLeft:"100px"}}onClick={() => removeFromFavorites(recipe.id)}>
+                <button
+                  className="btn btn-danger mt-2"
+                  style={{ marginLeft: "100px" }}
+                  onClick={() => removeFromFavorites(recipe.id)}
+                >
                   Remove from Favorites
                 </button>
               </div>
